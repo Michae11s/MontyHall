@@ -1,6 +1,7 @@
 
 ##### Imports #####
 import tkinter as tk
+from tkinter import messagebox
 import ctypes
 from ctypes import wintypes
 import time
@@ -11,19 +12,59 @@ import random as rnd
 
 ##### Create Vars #####
 door=0
-createDoors=[
-    "1",
-    "2",
-    "3"
-]
+tgames=0
+twins=0
+tloss=0
 
-games=0
-wins=0
-loss=0
+wgames=0
+wwins=0
+wloss=0
 
-## Called when run is clicked ##
-def RND1():
-    print(ans)
+rgames=0
+rwins=0
+rloss=0
+
+def displayStats():
+    buStr = "Stay Win Percent: "
+    if tgames != 0:
+        buStr = buStr + str(round(float(twins)/float(tgames)*float(100),2)) + "% "
+    else:
+        buStr = buStr + "..% "
+    buStr = buStr + "Wins: " + str(twins)
+    buStr = buStr + " Loss: " + str(tloss)
+    lblStayStats.config(text=buStr)
+
+    buStr = "Swap Win Percent: "
+    if wgames != 0:
+        buStr = buStr + str(round(float(wwins)/float(wgames)*float(100),2)) + "% "
+    else:
+        buStr = buStr + "..% "
+    buStr = buStr + "Wins: " + str(wwins)
+    buStr = buStr + " Loss: " + str(wloss)
+    lblSwapStats.config(text=buStr)
+
+    buStr = "Rand Win Percent: "
+    if rgames != 0:
+        buStr = buStr + str(round(float(rwins)/float(rgames)*float(100),2)) + "% "
+    else:
+        buStr = buStr + "..% "
+    buStr = buStr + "Wins: " + str(rwins)
+    buStr = buStr + " Loss: " + str(rloss)
+    lblRandStats.config(text=buStr)
+
+def iterateOnce():
+    closedDoors=[
+        0,
+        1,
+        2
+    ]
+    ans=rnd.randrange(0,3)
+    slct=rnd.randrange(0,3)
+    #print("##### ROUND START #####")
+    #print("Strat: " + str(strat.get()))
+    #print("answer is: " + str(ans) + " player first selection is: " + str(slct))
+
+    #open a door
     choice=[
         0,
         1,
@@ -31,42 +72,79 @@ def RND1():
     ]
     choice.remove(ans)
     try:
-        choice.remove(door.get())
+        choice.remove(slct)
+        closedDoors.remove(choice[0])
+        #print("Player wasn't right first time")
     except:
+        #print("Player was right the first time")
+        closedDoors.remove(choice[rnd.randrange(0,2)])
         #time.sleep(1)
-        print(ans)
-        print(door.get())
-    if(len(choice)==2):
-        rbDoors[choice[rnd.randrange(0,2)]].config(text="SHIT ALL")
-    else:
-        rbDoors[choice[0]].config(text="SHIT ALL")
 
-    btnRun.config(text="Confirm 2nd Choice", command=RND2)
+    #swap or stay
+    if(strat.get()=="swap"):
+        closedDoors.remove(slct)
+        slct=closedDoors[0]
+    elif(strat.get()=="rand"):
+        if(rnd.randrange(0,2)):
+            closedDoors.remove(slct)
+            slct=closedDoors[0]
 
-def RND2():
-    for val in range(0,3):
-        if (val==ans):
-            rbDoors[val].config(text="WINNER WINNER")
+    #determine the win/Loss and assign to stats based on strategy
+    global tgames
+    global twins
+    global tloss
+    global wgames
+    global wwins
+    global wloss
+    global rgames
+    global rwins
+    global rloss
+
+    if(strat.get()=="swap"):
+        wgames = wgames + 1
+        if(ans==slct):
+            #winner winner
+            wwins = wwins + 1
+            #print("player wins")
         else:
-            rbDoors[val].config(text="SHIT ALL")
-    btnRun.config(text="RESET?", command=RST)
-
-def RST():
-    global ans
-    ans=rnd.randrange(0,3)
-    btnRun.config(text="Confirm 1st Choice", command=RND1)
-    for val in range(0,3):
-        rbDoors[val].config(text=createDoors[val])
-
-def displayStats():
-    buStr = "Win Percent: "
-    if games != 0:
-           buStr = buStr + str(round(float(wins)/float(games)*float(100),2) + "% "
+            wloss = wloss + 1
+            #print("player losses")
+    elif(strat.get()=="stay"):
+        tgames = tgames + 1
+        if(ans==slct):
+            #winner winner
+            twins = twins + 1
+            #print("player wins")
+        else:
+            tloss = tloss + 1
+            #print("player losses")
     else:
-        buStr = buStr + "..% "
-    bStr = bStr + "Wins: " + str(wins)
-    bStr = bStr + " Loss: " + str(loss)
-    lblStats.config(text=bStr)
+        rgames = rgames + 1
+        if(ans==slct):
+            #winner winner
+            rwins = rwins + 1
+            #print("player wins")
+        else:
+            rloss = rloss + 1
+            #print("player losses")
+
+def iterate():
+    if(verNum):
+        times=int(txtTTR.get())
+        for i in range(0,times):
+            iterateOnce()
+            #print("remaining iterations: " + str(times-1-i))
+
+        displayStats()
+
+def verNum():
+    print("check")
+    if(not str(txtTTR.get()).isdigit()):
+        messagebox.showinfo("ERROR", "Times to run requires a interger")
+        txtTTR.delete(0,'end')
+        return False
+    else:
+        return True
 
 ##### Create the GUI #####
 #Create the window container
@@ -75,34 +153,37 @@ w.title("Monty Hall Simulator")
 #w.iconbitmap(default=os.path.join(application_path, iconFile))
 w.resizable(False, False)
 
-## createDoors ##
-# door=tk.IntVar()
-# door.set(0)
-# col=0
-# for val in createDoors:
-#     rbDoors.append(tk.Radiobutton(w, text=val, variable=door, value=col, indicatoron=0, width=18, height=25))
-#     rbDoors[col].grid(row=0, column=col, padx=10, pady=10)
-#     col=col+1
-#
-# rbDoors[0].select()
+## Create time to run lbl ##
+lblTTR=tk.Label(w,text="Times to Run:")
+lblTTR.grid(row=0, column=0, pady=7, sticky="e")
+
+## Create Times to iterate ##
+txtTTR=tk.Entry(w,text=10)
+txtTTR.grid(row=0, column=1, pady=7, sticky="w")
 
 ## Create Strategy ##
 strat=tk.StringVar()
 strat.set("stay")
-rbSwap=tk.Radiobutton(w, text="Swap Strategy", variable=strat, value="swap", indicatoron=0, width=10, height=10)
-rbSwap.grid(row=1, column=0, padx= 10, pady=10)
-rbStay=tk.Radiobutton(w, text="Stay Strategy", variable=strat, value="stay", indicatoron=0, width=10, height=10)
-rbStay.grid(row=1, column=1, padx= 10, pady=10)
+rbSwap=tk.Radiobutton(w, text="Swap Strategy", variable=strat, value="swap", indicatoron=0, width=15, height=5)
+rbSwap.grid(row=1, column=0, padx= 5, pady=10)
+rbStay=tk.Radiobutton(w, text="Stay Strategy", variable=strat, value="stay", indicatoron=0, width=15, height=5)
+rbStay.grid(row=1, column=1, padx= 5, pady=10)
+rbStay=tk.Radiobutton(w, text="Random Strategy", variable=strat, value="rand", indicatoron=0, width=15, height=5)
+rbStay.grid(row=1, column=2, padx= 5, pady=10)
 
 ### Create run button ###
-btnRun=tk.Button(w, text='Confirm 1st Choice', width=25, command=iterate)
-btnRun.grid(row=2, column=0, columnspan=2, pady=7)
+btnRun=tk.Button(w, text='Iterate', width=25, command=iterate)
+btnRun.grid(row=2, column=0, columnspan=3, pady=7)
 
 ### Create statistics label ###
-lblStats=tk.Label(w,text="xxx")
-lblStats.grid(row=3, columnspan=2, pady=7)
+lblStayStats=tk.Label(w,text="xxx")
+lblStayStats.grid(row=3, columnspan=3, pady=7)
+lblSwapStats=tk.Label(w,text="xxx")
+lblSwapStats.grid(row=4, columnspan=3, pady=7)
+lblRandStats=tk.Label(w,text="xxx")
+lblRandStats.grid(row=5, columnspan=3, pady=7)
 
 ##### Run some code #####
-w.mainloop()
 displayStats()
+w.mainloop()
 # main()
